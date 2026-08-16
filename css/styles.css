@@ -137,7 +137,7 @@ html, body {
 .tab:not(.active):hover { background: rgba(18,18,18,0.05); color: var(--ink); }
 
 /* ---------- Layout ---------- */
-.tw-main { padding-top: 4px; }
+.tw-main { padding-top: 4px; max-width: 1360px; }
 
 .toolbar {
   display: flex;
@@ -157,7 +157,7 @@ html, body {
   gap: 7px;
   background: var(--panel);
   border: 1px solid var(--line);
-  padding: 8px 10px;
+  padding: 9px 10px;
   flex: 1 1 200px;
   min-width: 160px;
   color: var(--ink);
@@ -176,7 +176,7 @@ html, body {
   appearance: none;
   background: var(--panel);
   border: 1px solid var(--line);
-  padding: 8px 30px 8px 10px;
+  padding: 9px 30px 9px 10px;
   font-family: var(--font-mono);
   font-size: 12px;
   text-transform: uppercase;
@@ -280,6 +280,9 @@ html, body {
 /* ---------- Tags / badges ---------- */
 .tag {
   display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-family: var(--font-mono);
   font-size: 10.5px;
   font-weight: 400;
@@ -294,6 +297,8 @@ html, body {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  max-width: 100%;
+  overflow: hidden;
   font-family: var(--font-mono);
   font-size: 10.5px;
   letter-spacing: 0.04em;
@@ -304,6 +309,7 @@ html, body {
   color: var(--ink-soft);
 }
 .season-badge-neutral { color: var(--ink-faint); }
+.season-badge span, .season-badge svg { flex-shrink: 0; }
 
 /* ---------- Gear table ---------- */
 .cat-group { margin-bottom: 16px; }
@@ -323,7 +329,7 @@ html, body {
 
 .gear-row {
   display: grid;
-  grid-template-columns: 1.8fr 130px 1.8fr 64px;
+  grid-template-columns: 1fr 130px 260px 64px;
   align-items: center;
   gap: 10px;
   padding: 9px 2px;
@@ -489,7 +495,7 @@ html, body {
 .pack-items { display: flex; flex-direction: column; }
 .pack-item-row {
   display: grid;
-  grid-template-columns: 20px 1.1fr 1.8fr auto 28px;
+  grid-template-columns: 20px 1fr 220px 160px 28px;
   align-items: center;
   gap: 8px;
   padding: 7px 2px;
@@ -606,7 +612,7 @@ html, body {
 .modal-cat-heading { padding: 8px 0 4px; }
 .modal-row {
   display: grid;
-  grid-template-columns: 18px 1fr auto;
+  grid-template-columns: 18px 1fr 130px;
   align-items: center;
   gap: 10px;
   padding: 8px 4px;

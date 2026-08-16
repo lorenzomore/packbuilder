@@ -208,7 +208,7 @@ function buildMarkdownExport(people, gearItems) {
 function buildPlainTextExport(people, gearItems) {
   const byId = {};
   gearItems.forEach(g => { byId[g.id] = g; });
-  const lines = ["*PACKBUILDER*", ""];
+  const lines = [];
   if (people.length === 0) lines.push("No people added yet.");
   people.forEach(person => {
     lines.push(`*${person.name}*`);
@@ -222,17 +222,17 @@ function buildPlainTextExport(people, gearItems) {
         lines.push("No gear assigned.");
       } else {
         sortPackItems(pack.items, byId).forEach(it => {
-          const box = it.packed ? "✅" : "⬜";
           const label = nameOf(it, byId);
           const cat = categoryOf(it, byId);
           const notes = it.notes ? ` — ${it.notes}` : "";
-          lines.push(`${box} ${label} (${cat})${notes}`);
+          const text = `${label} (${cat})${notes}`;
+          lines.push(`- ${it.packed ? `~${text}~` : text}`);
         });
       }
       lines.push("");
     });
   });
-  return lines.join("\n");
+  return lines.join("\n").trim();
 }
 
 function buildPdfBlob(people, gearItems) {
@@ -335,7 +335,7 @@ async function saveKey(key, value) {
 }
 
 function Tag({ label }) {
-  return <span className="tag">{label}</span>;
+  return <span className="tag" title={label}>{label}</span>;
 }
 
 function SeasonBadge({ season }) {
