@@ -46,9 +46,9 @@ html, body {
 }
 
 #root {
-  max-width: 980px;
-  margin: 0 auto;
-  padding: 28px 18px 60px;
+  max-width: none;
+  margin: 0;
+  padding: 28px clamp(18px, 3.5vw, 56px) 60px;
 }
 
 .tw-boot-msg {
@@ -489,7 +489,7 @@ html, body {
 .pack-items { display: flex; flex-direction: column; }
 .pack-item-row {
   display: grid;
-  grid-template-columns: 20px 1.2fr auto 48px 1.6fr 28px;
+  grid-template-columns: 20px 1.1fr 1.8fr auto 28px;
   align-items: center;
   gap: 8px;
   padding: 7px 2px;
@@ -510,16 +510,6 @@ html, body {
 }
 .packed-check.checked { background: var(--accent); border-color: var(--accent); }
 .pack-item-name.done { text-decoration: line-through; opacity: 0.45; }
-.qty-input {
-  width: 42px;
-  padding: 4px 5px;
-  border: 1px solid var(--line);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  text-align: center;
-  background: var(--paper);
-  color: var(--ink);
-}
 .notes-input {
   width: 100%;
   padding: 5px 8px;

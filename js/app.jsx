@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import * as XLSX from "xlsx";
+import { jsPDF } from "jspdf";
 import {
   Plus, Trash2, Upload, Search, X, Check, User,
-  Pencil, Users, Package, FileSpreadsheet, Download, Sun, Snowflake
+  Pencil, Users, Package, FileSpreadsheet, Download, Sun, Snowflake, Copy, FileDown
 } from "lucide-react";
 
 const CATEGORIES = [
@@ -152,6 +153,26 @@ function mdEscape(s) {
   return String(s || "").replace(/\|/g, "\\|");
 }
 
+function categoryOf(it, byId) {
+  if (it.custom) return "Custom";
+  const g = byId[it.gearId];
+  return g ? g.category : "Unknown";
+}
+
+function nameOf(it, byId) {
+  if (it.custom) return it.name;
+  const g = byId[it.gearId];
+  return g ? g.name : "(removed item)";
+}
+
+function sortPackItems(items, byId) {
+  return [...items].sort((a, b) => {
+    const ca = categoryOf(a, byId);
+    const cb = categoryOf(b, byId);
+    return ca.localeCompare(cb) || nameOf(a, byId).localeCompare(nameOf(b, byId));
+  });
+}
+
 function buildMarkdownExport(people, gearItems) {
   const byId = {};
   gearItems.forEach(g => { byId[g.id] = g; });
@@ -169,20 +190,130 @@ function buildMarkdownExport(people, gearItems) {
         lines.push("_No gear assigned._", "");
         return;
       }
-      pack.items.forEach(it => {
+      sortPackItems(pack.items, byId).forEach(it => {
         const box = it.packed ? "[x]" : "[ ]";
         const g = it.custom ? null : byId[it.gearId];
-        const label = it.custom ? mdEscape(it.name) : mdEscape(g ? g.name : "(removed item)");
-        const cat = it.custom ? "Custom" : (g ? g.category : "Unknown");
+        const label = mdEscape(nameOf(it, byId));
+        const cat = categoryOf(it, byId);
         const season = !it.custom && g && g.season ? `, ${g.season}` : "";
-        const qty = it.qty && it.qty !== 1 ? ` x${it.qty}` : "";
         const notes = it.notes ? ` — ${mdEscape(it.notes)}` : "";
-        lines.push(`- ${box} ${label} (${cat}${season})${qty}${notes}`);
+        lines.push(`- ${box} ${label} (${cat}${season})${notes}`);
       });
       lines.push("");
     });
   });
   return lines.join("\n");
+}
+
+function buildPlainTextExport(people, gearItems) {
+  const byId = {};
+  gearItems.forEach(g => { byId[g.id] = g; });
+  const lines = ["*PACKBUILDER*", ""];
+  if (people.length === 0) lines.push("No people added yet.");
+  people.forEach(person => {
+    lines.push(`*${person.name}*`);
+    if (person.packs.length === 0) {
+      lines.push("No packs yet.", "");
+      return;
+    }
+    person.packs.forEach(pack => {
+      lines.push(`_${pack.name}_`);
+      if (pack.items.length === 0) {
+        lines.push("No gear assigned.");
+      } else {
+        sortPackItems(pack.items, byId).forEach(it => {
+          const box = it.packed ? "✅" : "⬜";
+          const label = nameOf(it, byId);
+          const cat = categoryOf(it, byId);
+          const notes = it.notes ? ` — ${it.notes}` : "";
+          lines.push(`${box} ${label} (${cat})${notes}`);
+        });
+      }
+      lines.push("");
+    });
+  });
+  return lines.join("\n");
+}
+
+function buildPdfBlob(people, gearItems) {
+  const byId = {};
+  gearItems.forEach(g => { byId[g.id] = g; });
+  const doc = new jsPDF({ unit: "pt", format: "a4" });
+  const marginX = 44;
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const pageWidth = doc.internal.pageSize.getWidth();
+  let y = 56;
+
+  function ensureSpace(extra) {
+    if (y + extra > pageHeight - 44) {
+      doc.addPage();
+      y = 56;
+    }
+  }
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(18);
+  doc.text("PACKBUILDER", marginX, y);
+  y += 16;
+  doc.setDrawColor(0);
+  doc.setLineWidth(1);
+  doc.line(marginX, y, pageWidth - marginX, y);
+  y += 26;
+
+  if (people.length === 0) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    doc.text("No people added yet.", marginX, y);
+  }
+
+  people.forEach(person => {
+    ensureSpace(30);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.text(person.name, marginX, y);
+    y += 20;
+
+    if (person.packs.length === 0) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      ensureSpace(16);
+      doc.text("No packs yet.", marginX + 12, y);
+      y += 20;
+    }
+
+    person.packs.forEach(pack => {
+      ensureSpace(22);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11.5);
+      doc.text(pack.name, marginX + 12, y);
+      y += 17;
+
+      if (pack.items.length === 0) {
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        ensureSpace(15);
+        doc.text("No gear assigned.", marginX + 24, y);
+        y += 17;
+      } else {
+        sortPackItems(pack.items, byId).forEach(it => {
+          ensureSpace(15);
+          const box = it.packed ? "[x]" : "[ ]";
+          const label = nameOf(it, byId);
+          const cat = categoryOf(it, byId);
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(10);
+          let line = `${box} ${label}  (${cat})`;
+          if (it.notes) line += `  — ${it.notes}`;
+          doc.text(line, marginX + 24, y, { maxWidth: pageWidth - marginX * 2 - 24 });
+          y += 15;
+        });
+      }
+      y += 8;
+    });
+    y += 12;
+  });
+
+  return doc.output("blob");
 }
 
 async function loadKey(key, fallback) {
@@ -211,6 +342,42 @@ function SeasonBadge({ season }) {
   if (!season) return <span className="season-badge season-badge-neutral">— any season</span>;
   if (season === "Summer") return <span className="season-badge"><Sun size={12} /> Summer</span>;
   return <span className="season-badge"><Snowflake size={12} /> Winter</span>;
+}
+
+function CopyButton({ getText }) {
+  const [copied, setCopied] = useState(false);
+
+  async function handleCopy() {
+    const text = getText();
+    let ok = false;
+    try {
+      await navigator.clipboard.writeText(text);
+      ok = true;
+    } catch (e) {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+      } catch (e2) {
+        ok = false;
+      }
+    }
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  }
+
+  return (
+    <button className="btn-ghost" onClick={handleCopy}>
+      {copied ? <Check size={15} /> : <Copy size={15} />} {copied ? "Copied" : "Copy for chat"}
+    </button>
+  );
 }
 
 export default function PackbuilderApp() {
@@ -508,6 +675,10 @@ function PeoplePacks({ gearItems, people, onChange }) {
     <section>
       <div className="toolbar people-toolbar">
         <div className="spacer" />
+        <CopyButton getText={() => buildPlainTextExport(people, gearItems)} />
+        <button className="btn-ghost" onClick={() => downloadBlob("people-and-packs.pdf", buildPdfBlob(people, gearItems))}>
+          <FileDown size={15} /> PDF export
+        </button>
         <button className="btn-ghost" onClick={() => downloadBlob("people-and-packs.md", buildMarkdownExport(people, gearItems), "text/markdown")}>
           <Download size={15} /> Markdown export
         </button>
@@ -628,7 +799,7 @@ function PackCard({ pack, gearItems, onChange, onDelete }) {
       .filter(gearId => !pack.items.find(it => it.gearId === gearId))
       .map(gearId => {
         const g = itemsById[gearId];
-        return { id: uid(), gearId, qty: 1, packed: false, notes: (g && g.notes) || "" };
+        return { id: uid(), gearId, packed: false, notes: (g && g.notes) || "" };
       });
     if (additions.length) {
       onChange(pk => ({ ...pk, items: [...pk.items, ...additions] }));
@@ -638,17 +809,13 @@ function PackCard({ pack, gearItems, onChange, onDelete }) {
 
   function addCustomItem() {
     if (!customName.trim()) return;
-    onChange(pk => ({ ...pk, items: [...pk.items, { id: uid(), custom: true, name: customName.trim(), qty: 1, packed: false, notes: "" }] }));
+    onChange(pk => ({ ...pk, items: [...pk.items, { id: uid(), custom: true, name: customName.trim(), packed: false, notes: "" }] }));
     setCustomName("");
     setCustomOpen(false);
   }
 
   function removeItem(itemId) {
     onChange(pk => ({ ...pk, items: pk.items.filter(it => it.id !== itemId) }));
-  }
-
-  function setQty(itemId, qty) {
-    onChange(pk => ({ ...pk, items: pk.items.map(it => it.id === itemId ? { ...it, qty: Math.max(1, qty) } : it) }));
   }
 
   function togglePacked(itemId) {
@@ -687,7 +854,7 @@ function PackCard({ pack, gearItems, onChange, onDelete }) {
         <p className="pack-empty-hint">No gear assigned yet.</p>
       ) : (
         <div className="pack-items">
-          {pack.items.map(it => {
+          {sortPackItems(pack.items, itemsById).map(it => {
             const g = it.custom ? null : itemsById[it.gearId];
             if (!it.custom && !g) return null;
             const name = it.custom ? it.name : g.name;
@@ -698,20 +865,13 @@ function PackCard({ pack, gearItems, onChange, onDelete }) {
                   {it.packed && <Check size={12} />}
                 </button>
                 <span className={"pack-item-name" + (it.packed ? " done" : "")}>{name}</span>
-                <Tag label={catLabel} />
-                <input
-                  type="number"
-                  min="1"
-                  className="qty-input"
-                  value={it.qty}
-                  onChange={e => setQty(it.id, Number(e.target.value) || 1)}
-                />
                 <input
                   className="notes-input"
                   placeholder="Notes"
                   value={it.notes || ""}
                   onChange={e => setNotes(it.id, e.target.value)}
                 />
+                <Tag label={catLabel} />
                 <button className="icon-btn" onClick={() => removeItem(it.id)} aria-label="Remove"><X size={14} /></button>
               </div>
             );
