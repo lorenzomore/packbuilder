@@ -71,9 +71,10 @@ html, body {
 
 /* ---------- Header ---------- */
 .tw-header {
+  max-width: 1360px;
+  margin: 0 auto 28px;
   border-bottom: 2px solid var(--line);
   padding-bottom: 0;
-  margin-bottom: 28px;
 }
 .header-row {
   display: flex;
@@ -137,7 +138,7 @@ html, body {
 .tab:not(.active):hover { background: rgba(18,18,18,0.05); color: var(--ink); }
 
 /* ---------- Layout ---------- */
-.tw-main { padding-top: 4px; max-width: 1360px; }
+.tw-main { padding-top: 4px; max-width: 1360px; margin: 0 auto; }
 
 .toolbar {
   display: flex;

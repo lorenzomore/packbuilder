@@ -26,7 +26,9 @@ in one place, regardless of who ends up carrying it or on which trip.
 - **Download template** gives you a blank spreadsheet with dropdown
   menus already set up for Category and Season, so filling it in
   offline (or handing it to someone else to fill in) is fast and
-  hard to get wrong.
+  hard to get wrong. The category options live on a second sheet
+  inside the file, so you can add or edit them freely — the dropdown
+  updates automatically.
 - **Clear all** wipes the entire library, if you want to start over.
   It asks you to confirm first.
 

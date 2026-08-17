@@ -123,20 +123,27 @@ function buildZip(files) {
 }
 
 function buildTemplateXlsxBlob() {
-  const catList = xmlEscape(CATEGORIES.join(","));
   const seasonList = xmlEscape(SEASONS.join(","));
+  const CATEGORY_ROWS = 60;
+
   const contentTypes = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`;
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`;
   const rootRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`;
   const workbookRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`;
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/></Relationships>`;
   const workbook = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Gear Template" sheetId="1" r:id="rId1"/></sheets></workbook>`;
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Gear Template" sheetId="1" r:id="rId1"/><sheet name="Categories" sheetId="2" r:id="rId3"/></sheets><definedNames><definedName name="CategoryList">Categories!$A$1:$A$${CATEGORY_ROWS}</definedName></definedNames></workbook>`;
   const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="1"><font><sz val="11"/><name val="Arial"/></font></fonts><fills count="1"><fill><patternFill patternType="none"/></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/></cellXfs></styleSheet>`;
-  const sheet = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><dimension ref="A1:D201"/><sheetViews><sheetView workbookViewId="0"/></sheetViews><cols><col min="1" max="1" width="28" customWidth="1"/><col min="2" max="2" width="22" customWidth="1"/><col min="3" max="3" width="14" customWidth="1"/><col min="4" max="4" width="40" customWidth="1"/></cols><sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>Name</t></is></c><c r="B1" t="inlineStr"><is><t>Category</t></is></c><c r="C1" t="inlineStr"><is><t>Season</t></is></c><c r="D1" t="inlineStr"><is><t>Notes</t></is></c></row></sheetData><dataValidations count="2"><dataValidation type="list" allowBlank="1" showInputMessage="1" showErrorMessage="1" sqref="B2:B201"><formula1>&quot;${catList}&quot;</formula1></dataValidation><dataValidation type="list" allowBlank="1" showInputMessage="1" showErrorMessage="1" sqref="C2:C201"><formula1>&quot;${seasonList}&quot;</formula1></dataValidation></dataValidations></worksheet>`;
+  const sheet1 = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><dimension ref="A1:D201"/><sheetViews><sheetView workbookViewId="0"/></sheetViews><cols><col min="1" max="1" width="28" customWidth="1"/><col min="2" max="2" width="22" customWidth="1"/><col min="3" max="3" width="14" customWidth="1"/><col min="4" max="4" width="40" customWidth="1"/></cols><sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>Name</t></is></c><c r="B1" t="inlineStr"><is><t>Category</t></is></c><c r="C1" t="inlineStr"><is><t>Season</t></is></c><c r="D1" t="inlineStr"><is><t>Notes</t></is></c></row></sheetData><dataValidations count="2"><dataValidation type="list" allowBlank="1" showInputMessage="1" showErrorMessage="1" sqref="B2:B201"><formula1>CategoryList</formula1></dataValidation><dataValidation type="list" allowBlank="1" showInputMessage="1" showErrorMessage="1" sqref="C2:C201"><formula1>&quot;${seasonList}&quot;</formula1></dataValidation></dataValidations></worksheet>`;
+
+  const categoryRowsXml = CATEGORIES.map((c, i) =>
+    `<row r="${i + 1}"><c r="A${i + 1}" t="inlineStr"><is><t>${xmlEscape(c)}</t></is></c></row>`
+  ).join("");
+  const sheet2 = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><dimension ref="A1:A${CATEGORY_ROWS}"/><sheetViews><sheetView workbookViewId="0"/></sheetViews><cols><col min="1" max="1" width="26" customWidth="1"/></cols><sheetData>${categoryRowsXml}</sheetData></worksheet>`;
 
   const enc = (s) => new TextEncoder().encode(s);
   return buildZip([
@@ -145,7 +152,8 @@ function buildTemplateXlsxBlob() {
     { name: "xl/workbook.xml", data: enc(workbook) },
     { name: "xl/_rels/workbook.xml.rels", data: enc(workbookRels) },
     { name: "xl/styles.xml", data: enc(styles) },
-    { name: "xl/worksheets/sheet1.xml", data: enc(sheet) }
+    { name: "xl/worksheets/sheet1.xml", data: enc(sheet1) },
+    { name: "xl/worksheets/sheet2.xml", data: enc(sheet2) }
   ]);
 }
 
@@ -166,11 +174,13 @@ function nameOf(it, byId) {
 }
 
 function sortPackItems(items, byId) {
-  return [...items].sort((a, b) => {
-    const ca = categoryOf(a, byId);
-    const cb = categoryOf(b, byId);
-    return ca.localeCompare(cb) || nameOf(a, byId).localeCompare(nameOf(b, byId));
-  });
+  return items
+    .filter(it => it.custom || byId[it.gearId])
+    .sort((a, b) => {
+      const ca = categoryOf(a, byId);
+      const cb = categoryOf(b, byId);
+      return ca.localeCompare(cb) || nameOf(a, byId).localeCompare(nameOf(b, byId));
+    });
 }
 
 function buildMarkdownExport(people, gearItems) {
@@ -186,11 +196,12 @@ function buildMarkdownExport(people, gearItems) {
     }
     person.packs.forEach(pack => {
       lines.push(`### ${mdEscape(pack.name)}`, "");
-      if (pack.items.length === 0) {
+      const sorted = sortPackItems(pack.items, byId);
+      if (sorted.length === 0) {
         lines.push("_No gear assigned._", "");
         return;
       }
-      sortPackItems(pack.items, byId).forEach(it => {
+      sorted.forEach(it => {
         const box = it.packed ? "[x]" : "[ ]";
         const g = it.custom ? null : byId[it.gearId];
         const label = mdEscape(nameOf(it, byId));
@@ -218,14 +229,14 @@ function buildPlainTextExport(people, gearItems) {
     }
     person.packs.forEach(pack => {
       lines.push(`_${pack.name}_`);
-      if (pack.items.length === 0) {
+      const sorted = sortPackItems(pack.items, byId);
+      if (sorted.length === 0) {
         lines.push("No gear assigned.");
       } else {
-        sortPackItems(pack.items, byId).forEach(it => {
+        sorted.forEach(it => {
           const label = nameOf(it, byId);
-          const cat = categoryOf(it, byId);
           const notes = it.notes ? ` — ${it.notes}` : "";
-          const text = `${label} (${cat})${notes}`;
+          const text = `${label}${notes}`;
           lines.push(`- ${it.packed ? `~${text}~` : text}`);
         });
       }
@@ -288,14 +299,15 @@ function buildPdfBlob(people, gearItems) {
       doc.text(pack.name, marginX + 12, y);
       y += 17;
 
-      if (pack.items.length === 0) {
+      const sorted = sortPackItems(pack.items, byId);
+      if (sorted.length === 0) {
         doc.setFont("helvetica", "normal");
         doc.setFontSize(10);
         ensureSpace(15);
         doc.text("No gear assigned.", marginX + 24, y);
         y += 17;
       } else {
-        sortPackItems(pack.items, byId).forEach(it => {
+        sorted.forEach(it => {
           ensureSpace(15);
           const box = it.packed ? "[x]" : "[ ]";
           const label = nameOf(it, byId);
@@ -458,6 +470,10 @@ function GearLibrary({ gearItems, onChange, fileInputRef }) {
       .sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name));
   }, [gearItems, search, catFilter]);
 
+  const filterCategories = useMemo(() => {
+    return Array.from(new Set([...CATEGORIES, ...gearItems.map(g => g.category)])).sort();
+  }, [gearItems]);
+
   function resetForm() {
     setForm({ name: "", category: CATEGORIES[0], season: "", notes: "" });
   }
@@ -511,13 +527,13 @@ function GearLibrary({ gearItems, onChange, fileInputRef }) {
             return k ? row[k] : "";
           };
           const name = String(get("name") || get("item") || "").trim();
-          const category = String(get("category") || "Miscellaneous").trim();
+          const categoryRaw = String(get("category") || "").trim();
           const season = String(get("season") || "").trim();
           const notes = String(get("notes") || "");
           return name ? {
             id: uid(),
             name,
-            category: CATEGORIES.includes(category) ? category : "Miscellaneous",
+            category: categoryRaw || "Miscellaneous",
             season: SEASONS.includes(season) ? season : "",
             notes
           } : null;
@@ -556,7 +572,7 @@ function GearLibrary({ gearItems, onChange, fileInputRef }) {
         <div className="select-wrap">
           <select value={catFilter} onChange={e => setCatFilter(e.target.value)}>
             <option>All</option>
-            {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+            {filterCategories.map(c => <option key={c}>{c}</option>)}
           </select>
         </div>
         <div className="spacer" />
@@ -850,34 +866,36 @@ function PackCard({ pack, gearItems, onChange, onDelete }) {
         </div>
       </div>
 
-      {pack.items.length === 0 ? (
-        <p className="pack-empty-hint">No gear assigned yet.</p>
-      ) : (
-        <div className="pack-items">
-          {sortPackItems(pack.items, itemsById).map(it => {
-            const g = it.custom ? null : itemsById[it.gearId];
-            if (!it.custom && !g) return null;
-            const name = it.custom ? it.name : g.name;
-            const catLabel = it.custom ? "Custom" : g.category;
-            return (
-              <div className="pack-item-row" key={it.id}>
-                <button className={"packed-check" + (it.packed ? " checked" : "")} onClick={() => togglePacked(it.id)} aria-label="Toggle packed">
-                  {it.packed && <Check size={12} />}
-                </button>
-                <span className={"pack-item-name" + (it.packed ? " done" : "")}>{name}</span>
-                <input
-                  className="notes-input"
-                  placeholder="Notes"
-                  value={it.notes || ""}
-                  onChange={e => setNotes(it.id, e.target.value)}
-                />
-                <Tag label={catLabel} />
-                <button className="icon-btn" onClick={() => removeItem(it.id)} aria-label="Remove"><X size={14} /></button>
-              </div>
-            );
-          })}
-        </div>
-      )}
+      {(() => {
+        const sortedItems = sortPackItems(pack.items, itemsById);
+        return sortedItems.length === 0 ? (
+          <p className="pack-empty-hint">No gear assigned yet.</p>
+        ) : (
+          <div className="pack-items">
+            {sortedItems.map(it => {
+              const g = it.custom ? null : itemsById[it.gearId];
+              const name = it.custom ? it.name : g.name;
+              const catLabel = it.custom ? "Custom" : g.category;
+              return (
+                <div className="pack-item-row" key={it.id}>
+                  <button className={"packed-check" + (it.packed ? " checked" : "")} onClick={() => togglePacked(it.id)} aria-label="Toggle packed">
+                    {it.packed && <Check size={12} />}
+                  </button>
+                  <span className={"pack-item-name" + (it.packed ? " done" : "")}>{name}</span>
+                  <input
+                    className="notes-input"
+                    placeholder="Notes"
+                    value={it.notes || ""}
+                    onChange={e => setNotes(it.id, e.target.value)}
+                  />
+                  <Tag label={catLabel} />
+                  <button className="icon-btn" onClick={() => removeItem(it.id)} aria-label="Remove"><X size={14} /></button>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
 
       <div className="pack-add-row">
         {customOpen ? (
