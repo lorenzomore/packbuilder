@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import * as XLSX from "xlsx";
 import { jsPDF } from "jspdf";
+import { marked } from "marked";
 import {
   Plus, Trash2, Upload, Search, X, Check, User,
   Pencil, Users, Package, FileSpreadsheet, Download, Sun, Snowflake, Copy, FileDown
@@ -311,10 +312,9 @@ function buildPdfBlob(people, gearItems) {
           ensureSpace(15);
           const box = it.packed ? "[x]" : "[ ]";
           const label = nameOf(it, byId);
-          const cat = categoryOf(it, byId);
           doc.setFont("helvetica", "normal");
           doc.setFontSize(10);
-          let line = `${box} ${label}  (${cat})`;
+          let line = `${box} ${label}`;
           if (it.notes) line += `  — ${it.notes}`;
           doc.text(line, marginX + 24, y, { maxWidth: pageWidth - marginX * 2 - 24 });
           y += 15;
@@ -356,7 +356,7 @@ function SeasonBadge({ season }) {
   return <span className="season-badge"><Snowflake size={12} /> Winter</span>;
 }
 
-function CopyButton({ getText }) {
+function CopyButton({ getText, label = "Copy" }) {
   const [copied, setCopied] = useState(false);
 
   async function handleCopy() {
@@ -387,7 +387,7 @@ function CopyButton({ getText }) {
 
   return (
     <button className="btn-ghost" onClick={handleCopy}>
-      {copied ? <Check size={15} /> : <Copy size={15} />} {copied ? "Copied" : "Copy for chat"}
+      {copied ? <Check size={15} /> : <Copy size={15} />} {copied ? "Copied" : label}
     </button>
   );
 }
@@ -397,6 +397,7 @@ export default function PackbuilderApp() {
   const [gearItems, setGearItems] = useState([]);
   const [people, setPeople] = useState([]);
   const [loaded, setLoaded] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -428,8 +429,8 @@ export default function PackbuilderApp() {
     <div className="tw-root">
       <header className="tw-header">
         <div className="header-row">
-          <span className="mono-label">PACKBUILDER</span>
           <span className="mono-label mono-dim">GEAR SYSTEM / V1</span>
+          <button className="mono-label mono-link" onClick={() => setGuideOpen(true)}>/ GUIDE</button>
         </div>
         <h1>Packbuilder</h1>
         <p className="tagline">Know what's in every pack.</p>
@@ -443,6 +444,8 @@ export default function PackbuilderApp() {
         </div>
       </header>
 
+      {guideOpen && <GuideModal onClose={() => setGuideOpen(false)} />}
+
       <main className="tw-main">
         {tab === "gear" ? (
           <GearLibrary gearItems={gearItems} onChange={persistGear} fileInputRef={fileInputRef} />
@@ -450,6 +453,47 @@ export default function PackbuilderApp() {
           <PeoplePacks gearItems={gearItems} people={people} onChange={persistPeople} />
         )}
       </main>
+    </div>
+  );
+}
+
+function GuideModal({ onClose }) {
+  const [html, setHtml] = useState(null);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("README.md");
+        if (!res.ok) throw new Error("Could not load README.md (" + res.status + ")");
+        const text = await res.text();
+        const parsed = marked.parse(text);
+        if (!cancelled) setHtml(parsed);
+      } catch (e) {
+        if (!cancelled) setError(e.message || String(e));
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-card guide-card" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3>Guide</h3>
+          <button className="icon-btn" onClick={onClose} aria-label="Close"><X size={16} /></button>
+        </div>
+        <div className="guide-content">
+          {error ? (
+            <p className="picker-empty">Couldn't load the guide. {error}</p>
+          ) : html === null ? (
+            <p className="picker-empty">Loading —</p>
+          ) : (
+            <div dangerouslySetInnerHTML={{ __html: html }} />
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -471,7 +515,7 @@ function GearLibrary({ gearItems, onChange, fileInputRef }) {
   }, [gearItems, search, catFilter]);
 
   const filterCategories = useMemo(() => {
-    return Array.from(new Set([...CATEGORIES, ...gearItems.map(g => g.category)])).sort();
+    return Array.from(new Set(gearItems.map(g => g.category))).sort();
   }, [gearItems]);
 
   function resetForm() {
@@ -691,7 +735,7 @@ function PeoplePacks({ gearItems, people, onChange }) {
     <section>
       <div className="toolbar people-toolbar">
         <div className="spacer" />
-        <CopyButton getText={() => buildPlainTextExport(people, gearItems)} />
+        <CopyButton getText={() => buildPlainTextExport(people, gearItems)} label="Copy all" />
         <button className="btn-ghost" onClick={() => downloadBlob("people-and-packs.pdf", buildPdfBlob(people, gearItems))}>
           <FileDown size={15} /> PDF export
         </button>
@@ -774,7 +818,10 @@ function PersonPanel({ person, gearItems, onUpdate, onDelete }) {
     <div>
       <div className="person-header">
         <h2>{person.name}</h2>
-        <button className="btn-ghost" onClick={onDelete}><Trash2 size={14} /> Remove person</button>
+        <div className="person-header-actions">
+          <CopyButton getText={() => buildPlainTextExport([person], gearItems)} label="Copy to clipboard" />
+          <button className="btn-ghost" onClick={onDelete}><Trash2 size={14} /> Remove person</button>
+        </div>
       </div>
       {person.packs.length === 0 ? (
         <div className="empty-state">
